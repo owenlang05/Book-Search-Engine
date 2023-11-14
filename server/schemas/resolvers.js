@@ -2,27 +2,14 @@ const { User, Book } = require('../models');
 const AuthenticationError = require('../utils/auth')
 const resolvers = {
   Query: {
-    tech: async () => {
-      return Tech.find({});
-    },
-    matchups: async (parent, { _id }) => {
-      const params = _id ? { _id } : {};
-      return Matchup.find(params);
+    me: async (parent, args, context) => {
+      if (context.user) {
+        return User.findOne({_id: context.user._id})
+      }
+      throw AuthenticationError
     },
   },
   Mutation: {
-    // createMatchup: async (parent, args) => {
-    //   const matchup = await Matchup.create(args);
-    //   return matchup;
-    // },
-    // createVote: async (parent, { _id, techNum }) => {
-    //   const vote = await Matchup.findOneAndUpdate(
-    //     { _id },
-    //     { $inc: { [`tech${techNum}_votes`]: 1 } },
-    //     { new: true }
-    //   );
-    //   return vote;
-    // },
     addUser: async (parent, args) => {
         const user = User.create(args);
         return user;
@@ -54,9 +41,18 @@ const resolvers = {
 
             return updatedUser
         }
+        throw AuthenticationError
     },
-    removeBook: async (parent, {bookId}) => {
-
+    removeBook: async (parent, {bookId}, context) => {
+        if (context.user) {
+            const updatedUser = await User.findOneAndUpdate(
+                {_id: context.user._id},
+                {$pull: {savedBooks: {bookId: bookId}}},
+                {new: true}
+            )
+            return updatedUser
+        }
+        throw AuthenticationError
     }
   },
 };
