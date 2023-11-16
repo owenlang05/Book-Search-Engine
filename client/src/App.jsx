@@ -7,8 +7,7 @@ import {
   createHttpLink,
 } from '@apollo/client';
 
-import { StoreProvider} from './utils/store-context';
-import Nav from './components/Nav';
+import Navbar from './components/Navbar';
 
 import Auth from './utils/auth'
 
@@ -36,10 +35,8 @@ function App() {
 
   return (
     <ApolloProvider client={client}>
-      <StoreProvider>
-        <Nav />
+        <Navbar />
         <Outlet />
-      </StoreProvider>
     </ApolloProvider>
   )
 }

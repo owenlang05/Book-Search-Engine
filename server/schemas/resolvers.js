@@ -1,30 +1,36 @@
 const { User, Book } = require('../models');
-const AuthenticationError = require('../utils/auth')
+const {signToken} = require('../utils/auth');
+const { AuthenticationError } = require('apollo-server-express');
 const resolvers = {
   Query: {
     me: async (parent, args, context) => {
       if (context.user) {
-        return User.findOne({_id: context.user._id})
+        const userData = User.findOne({})
+        .select('__v -password')
+        .populate('books')
+        return userData;
       }
-      throw AuthenticationError
+      throw new AuthenticationError("Log in first!")
     },
   },
   Mutation: {
     addUser: async (parent, args) => {
         const user = User.create(args);
-        return user;
+        console.log(user)
+        const token = signToken(user);
+        return {token, user};
     },
     login: async (parent, {email, password}) => {
         const user = await User.findOne({ email });
 
         if (!user) {
-            throw AuthenticationError;
+            throw new AuthenticationError("No user found!");
         }
 
-        const correctPw = await user.verifyPassword(password);
+        const correctPw = await user.isCorrectPassword(password);
 
         if (!correctPw) {
-            throw AuthenticationError;
+            throw new AuthenticationError('Bad Credentials');
         }
 
         const token = signToken(user);
@@ -41,7 +47,7 @@ const resolvers = {
 
             return updatedUser
         }
-        throw AuthenticationError
+        throw new AuthenticationError("Log In first!")
     },
     removeBook: async (parent, {bookId}, context) => {
         if (context.user) {
@@ -52,7 +58,7 @@ const resolvers = {
             )
             return updatedUser
         }
-        throw AuthenticationError
+        throw new AuthenticationError("Log in First!")
     }
   },
 };
